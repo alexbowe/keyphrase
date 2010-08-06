@@ -8,4 +8,7 @@ dumbo start keyphrase.py \
     -libegg $DEPS/PyYAML.egg \
     -addpath yes \
     -input $INPUT_DIR/* \
-    -output $2
+    -output $2 \
+    2> /dev/null
+cat $2
+    

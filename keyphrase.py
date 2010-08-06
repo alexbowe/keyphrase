@@ -11,8 +11,7 @@ def mapper(key, value):
     yield key[0], fd.keys()[:3]
     
 def reducer(key,values):
-    for word in values:
-        yield key, word
+    yield key, values
 
 if __name__ == "__main__":
     run(mapper, reducer)
