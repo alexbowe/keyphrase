@@ -1,5 +1,6 @@
 from dumbo import opt, run
 from nltk.corpus import stopwords
+from nltk.stem.porter import PorterStemmer
 from nltk.probability import FreqDist
 
 stopwords = stopwords.words('english')
@@ -8,9 +9,11 @@ numKeyphrases = 10
 @opt("addpath", "yes")
 def mapper(key, value):
     for word in value.split():
-        #stem word
-        #stop word
-        yield key[0], (word, 1)
+        word = word.lower()
+        
+        if word not in stopwords:
+            word = PorterStemmer().stem_word(word)
+            yield key[0], (word, 1)
 
 def reducer(key,value):
     fd = FreqDist()
