@@ -1,23 +1,22 @@
 from dumbo import opt, run
-from nltk import probability
+from nltk.corpus import stopwords
+from nltk.probability import FreqDist
+
+stopwords = stopwords.words('english')
+numKeyphrases = 10
 
 @opt("addpath", "yes")
 def mapper(key, value):
-    fd = probability.FreqDist()
     for word in value.split():
         #stem word
         #stop word
-        fd.inc(word)
-    yield key[0], fd.keys()[:3]
-    
-# extract document id in mapper
-# mapper() -> stop-filtered stemmed words (or bi-words) + key, 1
-# sumreduce combiner
-# reducer() -> reads values into DistFreq and prints the top ten
-    
-def reducer(key,values):
-    for words in values:
-        yield key, values
+        yield key[0], (word, 1)
+
+def reducer(key,value):
+    fd = FreqDist()
+    for word, freq in value:
+        fd.inc(word, freq)
+    yield key, fd.keys()[:numKeyphrases]
 
 if __name__ == "__main__":
-    run(mapper)
+    run(mapper, reducer)
