@@ -9,6 +9,6 @@ dumbo start keyphrase.py \
     -addpath yes \
     -input $INPUT_DIR/* \
     -output $2 \
-    2> /dev/null
+    2> dumbo.log
 cat $2
     

@@ -14,6 +14,7 @@ def mapper(key, value):
         if word not in stopwords:
             word = PorterStemmer().stem_word(word)
             yield key[0], (word, 1)
+#use freqdist instead of combiner...?
 
 def reducer(key,value):
     fd = FreqDist()
