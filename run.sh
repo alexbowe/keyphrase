@@ -24,4 +24,10 @@ sort -n $OUT > $OUT.sorted
 mv $OUT.sorted $OUT
 
 # Assess the performance
-./performance.pl $OUT
+./performance.pl $OUT #> results
+#cat results
+
+# Track difference
+#cat results | tail -1 >> perf
+# Use awk here to calculate difference in %ges
+#rm results
