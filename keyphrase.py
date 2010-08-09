@@ -12,6 +12,7 @@ def mapper(key, value):
     fd = FreqDist()
     for word in value.split():
         word = word.lower()
+        # Strip unwanted symbols (quotes, %, etc...)
         if word not in stopwords:
             word = PorterStemmer().stem_word(word)
             fd.inc(word, 1)
@@ -22,7 +23,8 @@ def reducer(key, values):
     for row in values:
         for word, freq in row:
             fd.inc(word, freq)
-    yield key, separator.join(fd.keys()[:numKeyphrases])
+    keyphrases = fd.keys()[:numKeyphrases]
+    yield key, separator.join(keyphrases)
 
 if __name__ == "__main__":
     run(mapper, reducer)
