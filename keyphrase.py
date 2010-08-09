@@ -5,6 +5,7 @@ from nltk.probability import FreqDist
 
 stopwords = stopwords.words('english')
 numKeyphrases = 10
+separator = ','
 
 @opt("addpath", "yes")
 def mapper(key, value):
@@ -20,7 +21,8 @@ def reducer(key,value):
     fd = FreqDist()
     for word, freq in value:
         fd.inc(word, freq)
-    yield key, fd.keys()[:numKeyphrases]
+    keyphrases = fd.keys()[:numKeyphrases]
+    yield key, separator.join(keyphrases)
 
 if __name__ == "__main__":
     run(mapper, reducer)
