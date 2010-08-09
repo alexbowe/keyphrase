@@ -5,7 +5,7 @@ LOG=dumbo.log
 OUT=3134434.out #$2
 
 # Remove previous run if it exists
-rm $OUT
+rm $OUT 2> $LOG
 
 # Run the MapReduce program
 dumbo start keyphrase.py \
@@ -18,6 +18,10 @@ dumbo start keyphrase.py \
 
 # Format for use with performance tester
 ./format.pl $OUT
+
+# Sort the output for easier manual inspection
+sort -n $OUT > $OUT.sorted
+mv $OUT.sorted $OUT
 
 # Assess the performance
 ./performance.pl $OUT
