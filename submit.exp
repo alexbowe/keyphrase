@@ -12,7 +12,7 @@ set dir ~
 # Turnin Details - change files to reflect assignment
 set submit turnin
 set submit_flags -ccosc2305
-set files {keyphrase.py mycorpus.py run.sh 3134434.out diagnostic format.pl}
+set files {keyphrase.py mycorpus.py run.sh 3134434.out diagnostics format.pl}
 set timeout -1
 
 # Copy files to Yallara
