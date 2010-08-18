@@ -58,7 +58,8 @@ dumbo start keyphrase.py \
     -output $OUTPUT \
     -inputformat text \
     -outputformat text \
-    > /dev/null
+    > /dev/null \
+    2> diagnostic
 
 # Wait for Hadoop to finish before continuing
 wait
