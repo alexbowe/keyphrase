@@ -3,9 +3,9 @@ DEPS=deps
 HADOOP=$HADOOP_HOME/bin/hadoop
 LOG=dumbo.log
 LOC_INPUT=text
-DFS_INPUT=dfs_text
+DFS_INPUT=dfs_${LOC_INPUT}
 LOC_OUTPUT=3134434.out
-DFS_OUTPUT=dfs_output
+DFS_OUTPUT=dfs_${LOC_OUTPUT}
 
 # Argument Handling
 args=`getopt l $*`
@@ -15,7 +15,7 @@ if [ $1 == '--' ]; then
 fi
 
 echo -n "Running in "
-if [ $DISTRIB ]; then echo -n "DISTRBIUTED"; else echo -n "LOCAL"; fi
+if [ $DISTRIB ]; then echo -n "DISTRIBUTED"; else echo -n "LOCAL"; fi
 echo " mode"
 
 # Remove previous run if it exists
@@ -29,12 +29,12 @@ rm $LOC_OUTPUT 2> /dev/null
 # NOTE: Would have issues if there are files in one folder that aren't
 # in the other, but for now it's okay
 if [ $DISTRIB ]; then
-    RESULT=$($HADOOP fs -ls $DFS_INPUT)
+    RESULT=$($HADOOP fs -ls $DFS_INPUT 2> /dev/null)
     if [ ${#RESULT} -eq 0 ]; then 
         echo "Moving input files to HDFS..."
-        $HADOOP fs -put $INPUT/ $DFS_INPUT
+        $HADOOP fs -moveFromLocal $LOC_INPUT $DFS_INPUT
     else
-        echo "Input files already on HDFS; no need to move them."
+        echo "Input files are already on HDFS..."
     fi
 fi
 
@@ -59,7 +59,7 @@ dumbo start keyphrase.py \
     -inputformat text \
     -outputformat text \
     > /dev/null \
-    2> diagnostic
+    2> diagnostics
 
 # Wait for Hadoop to finish before continuing
 wait
