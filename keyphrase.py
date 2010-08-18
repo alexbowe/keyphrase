@@ -1,9 +1,10 @@
 from dumbo import opt, run
-from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 from nltk.probability import FreqDist
 
-stopwords = stopwords.words('english')
+import mycorpus
+
+stopwords = mycorpus.stopwords
 numKeyphrases = 10
 separator = ','
 
