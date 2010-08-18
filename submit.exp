@@ -1,0 +1,46 @@
+#!/usr/bin/expect -f
+# ./submit.exp password
+
+# Host Details
+set password [lrange $argv 0 0]
+set user s3134434
+set host yallara.cs.rmit.edu.au
+
+# Directory Details
+set dir ~
+
+# Turnin Details - change files to reflect assignment
+set submit turnin
+set submit_flags -ccosc2305
+set files {test test2 test3}
+set timeout -1
+
+# Copy files to Yallara
+foreach file $files {
+    spawn scp $file $user@$host:$dir
+    # Look for passwod prompt
+    expect "*?assword:*"
+    # Send password aka $password
+    send -- "$password\r"
+    expect eof
+}
+
+# Turnin files
+spawn ssh $user@$host
+# Look for passwod prompt
+expect "*?assword:*"
+# Send password aka $password
+send -- "$password\r"
+# Wait for prompt
+expect "*?>"
+# Find directory
+send -- "cd $dir\r"
+send -- "$submit $submit_flags $files\r"
+# Answer turnin's safety questions
+expect "*?\(yes\/no\)\?"
+send -- "yes\r"
+expect "*?\[yn\]"
+send -- "y\r"
+expect ""
+send -- "exit\r"
+expect eof
