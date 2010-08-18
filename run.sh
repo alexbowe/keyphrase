@@ -2,56 +2,82 @@
 DEPS=deps
 HADOOP=$HADOOP_HOME/bin/hadoop
 LOG=dumbo.log
-INPUT=text
+LOC_INPUT=text
 DFS_INPUT=dfs_text
-OUTPUT=3134434.out
-DFS_OUTPUT=output
+LOC_OUTPUT=3134434.out
+DFS_OUTPUT=dfs_output
+
+# Argument Handling
+args=`getopt l $*`
+eval set -- $args
+if [ $1 == '--' ]; then
+    DISTRIB=1
+fi
+
+echo -n "Running in "
+if [ $DISTRIB ]; then echo -n "DISTRBIUTED"; else echo -n "LOCAL"; fi
+echo " mode"
 
 # Remove previous run if it exists
 echo "Removing previous results..."
-$HADOOP fs -rmr $DFS_OUTPUT
-rm $OUTPUT
+if [ $DISTRIB ]; then
+    $HADOOP fs -rmr $DFS_OUTPUT > /dev/null 2> /dev/null
+fi
+rm $LOC_OUTPUT 2> /dev/null
 
 # Move input files to DFS
 # NOTE: Would have issues if there are files in one folder that aren't
 # in the other, but for now it's okay
-echo "Checking if input files are on HDFS..."
-RESULT=$($HADOOP fs -ls $DFS_INPUT)
-if [ ${#RESULT} -eq 0 ]; then 
-    echo "Moving input files to HDFS..."
-    $HADOOP fs -put $INPUT/ $DFS_INPUT
+if [ $DISTRIB ]; then
+    RESULT=$($HADOOP fs -ls $DFS_INPUT)
+    if [ ${#RESULT} -eq 0 ]; then 
+        echo "Moving input files to HDFS..."
+        $HADOOP fs -put $INPUT/ $DFS_INPUT
+    else
+        echo "Input files already on HDFS; no need to move them."
+    fi
+fi
+
+if [ $DISTRIB ]; then
+    INPUT=$DFS_INPUT
+    OUTPUT=$DFS_OUTPUT
+    DIST_ARGS="-hadoop $HADOOP_HOME -file mycorpus.py"
 else
-    echo "Input files already on HDFS; no need to move them."
+    INPUT=$LOC_INPUT
+    OUTPUT=$LOC_OUTPUT
 fi
 
 # Run the MapReduce program via Dumbo
 echo "Beginning Dumbo Program..."
 dumbo start keyphrase.py \
-    -file mycorpus.py \
-    -hadoop $HADOOP_HOME \
+    $DIST_ARGS \
     -libegg $DEPS/nltk-2.0b9-py2.6.egg \
     -libegg $DEPS/PyYAML.egg \
     -addpath yes \
-    -input $DFS_INPUT/* \
-    -output $DFS_OUTPUT \
+    -input $INPUT/* \
+    -output $OUTPUT \
     -inputformat text \
-    -outputformat text
+    -outputformat text \
+    > /dev/null
 
 # Wait for Hadoop to finish before continuing
 wait
 
 # Get Output from DFS
-echo "Collecting output from HDFS..."
-$HADOOP_HOME/bin/hadoop fs -cat $DFS_OUTPUT/part-* > $OUTPUT
+if [ $DISTRIB ]; then
+    echo "Collecting output from HDFS..."
+    $HADOOP_HOME/bin/hadoop fs -cat $DFS_OUTPUT/part-* > $LOC_OUTPUT
+fi
 
 # Format for use with performance tester
-echo "Reformatting output..."
-./format.pl $OUTPUT
+#echo "Reformatting output..."
+./format.pl $LOC_OUTPUT > $LOC_OUTPUT.formatted
+mv $LOC_OUTPUT.formatted $LOC_OUTPUT
 
 # Sort the output for easier manual inspection
-sort -n $OUTPUT > $OUTPUT.sorted
-mv $OUTPUT.sorted $OUTPUT
+sort -n $LOC_OUTPUT > $LOC_OUTPUT.sorted
+mv $LOC_OUTPUT.sorted $LOC_OUTPUT
 
 # Assess the performance
-./performance.pl $OUTPUT
+./performance.pl $LOC_OUTPUT
 

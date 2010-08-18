@@ -23,6 +23,12 @@ You must have [Hadoop](http://hadoop.apache.org/) and [Dumbo](http://klbostee.gi
 
 This will copy the contents of the text folder to HDFS, and the results will be reformatted according to the assignment requirements and output to 3134434.out.
 
+To run it in local Dumbo mode:
+
+    ./run.sh -l
+
+This is much faster than pseudo-distributed, and better for debugging.
+
 Dependencies
 ------------
 
