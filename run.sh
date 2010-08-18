@@ -1,43 +1,56 @@
 #!/bin/bash
 DEPS=deps
-INPUT_DIR=text #$1
+HADOOP=$HADOOP_HOME/bin/hadoop
 LOG=dumbo.log
-OUT=3134434.out #$2
+INPUT=text
+DFS_INPUT=dfs_text
+OUTPUT=3134434.out
+DFS_OUTPUT=output
 
 # Remove previous run if it exists
-$HADOOP_HOME/bin/hadoop fs -rmr $OUT 2> $LOG
-rm $OUT 2> $LOG
+echo "Removing previous results..."
+$HADOOP fs -rmr $DFS_OUTPUT
+rm $OUTPUT
 
 # Move input files to DFS
-$HADOOP_HOME/bin/hadoop fs -put $INPUT_DIR/ $INPUT_DIR
+# NOTE: Would have issues if there are files in one folder that aren't
+# in the other, but for now it's okay
+echo "Checking if input files are on HDFS..."
+RESULT=$($HADOOP fs -ls $DFS_INPUT)
+if [ ${#RESULT} -eq 0 ]; then 
+    echo "Moving input files to HDFS..."
+    $HADOOP fs -put $INPUT/ $DFS_INPUT
+else
+    echo "Input files already on HDFS; no need to move them."
+fi
 
-# Run the MapReduce program
+# Run the MapReduce program via Dumbo
+echo "Beginning Dumbo Program..."
 dumbo start keyphrase.py \
     -hadoop $HADOOP_HOME \
     -libegg $DEPS/nltk-2.0b9-py2.6.egg \
     -libegg $DEPS/PyYAML.egg \
     -addpath yes \
-    -input $INPUT_DIR/* \
-    -output $OUT \
+    -input $DFS_INPUT/* \
+    -output $DFS_OUTPUT \
     -inputformat text \
-    -outputformat text \
-    2> $LOG
+    -outputformat text
+
+# Wait for Hadoop to finish before continuing
+wait
 
 # Get Output from DFS
-# $HADOOP_HOME/bin/hadoop fs -get $OUT/* $OUT
+echo "Collecting output from HDFS..."
+$HADOOP_HOME/bin/hadoop fs -cat $DFS_OUTPUT/part-* > $OUTPUT
 
 # Format for use with performance tester
-# ./format.pl $OUT
+echo "Reformatting output..."
+./format.pl $OUTPUT
 
 # Sort the output for easier manual inspection
-# sort -n $OUT > $OUT.sorted
-# mv $OUT.sorted $OUT
+sort -n $OUTPUT > $OUTPUT.sorted
+mv $OUTPUT.sorted $OUTPUT
 
 # Assess the performance
-#./performance.pl $OUT #> results
-#cat results
+./performance.pl $OUTPUT
 
-# Track difference
-#cat results | tail -1 >> perf
-# Use awk here to calculate difference in %ges
-#rm results

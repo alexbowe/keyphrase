@@ -14,6 +14,15 @@ To clone this repository:
 	
 This will create a directory `keyphrase` in your working directory. Note that this won't allow you to submit changes to the master repository.
 
+Running
+-------
+
+You must have [Hadoop](http://hadoop.apache.org/) and [Dumbo](http://klbostee.github.com/dumbo/) installed. Just type:
+
+    ./run.sh
+
+This will copy the contents of the text folder to HDFS, and the results will be reformatted according to the assignment requirements and output to 3134434.out.
+
 Dependencies
 ------------
 
@@ -33,7 +42,7 @@ Dependencies
 License
 -------
 
-This is for an assignment so if you are currently in the Search Technology course at RMIT during semester two, 2010, then you are prohibited to use this. Anyone else can use my work however they wish.
+Anyone can use my work however they wish.
 
 The `performance.pl` and `porter.pl` scripts, `test.reader.stem.final`, the test data located in `test` and the assignment pdf files were all provided by the lecturer for the course. Please ask me if you need to use them, and I'll forward the request on.
 
