@@ -27,6 +27,7 @@ fi
 # Run the MapReduce program via Dumbo
 echo "Beginning Dumbo Program..."
 dumbo start keyphrase.py \
+    -file mycorpus.py \
     -hadoop $HADOOP_HOME \
     -libegg $DEPS/nltk-2.0b9-py2.6.egg \
     -libegg $DEPS/PyYAML.egg \
