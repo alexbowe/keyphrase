@@ -47,6 +47,8 @@ else
     OUTPUT=$LOC_OUTPUT
 fi
 
+DOCCOUNT=$(ls -1 $LOC_INPUT | wc -l)
+
 # Run the MapReduce program via Dumbo
 echo "Beginning Dumbo Program..."
 dumbo start keyphrase.py \
@@ -58,6 +60,7 @@ dumbo start keyphrase.py \
     -output $OUTPUT \
     -inputformat text \
     -outputformat text \
+    -param doccount=$DOCCOUNT \
     > /dev/null \
     2> diagnostics
 
