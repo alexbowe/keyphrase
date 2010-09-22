@@ -88,7 +88,6 @@ def termMapper( (docname, lineNum), line):
     if DEBUG and lineNum is 0:
         import sys
         sys.stderr.write(str(docname) + ", " + str(lineNum) +": " + line + "\n")
-    value = stripChars.sub(' ', line)
     toks = word_tokenize(line)
     postoks = nltk.tag.pos_tag(toks)
     chunkTree = chunker.parse(postoks)
@@ -136,7 +135,7 @@ class CorpusTermCountReducer:
 
 def finalMapper((term, docname), tf_idf):
     yield docname, (term, tf_idf)
-    
+
 def finalReducer(docname, values):
     fd = FreqDist()
     for (term, tf_idf) in values:
