@@ -117,8 +117,11 @@ def reducer(key, values):
     for row in values:
         for word, freq in row:
             fd.inc(word, freq)
-    keyphrases = fd.keys()[:numKeyphrases]
+    keyphrases = fd.keys()
     yield key, separator.join(keyphrases)
+
+def runner(job):
+    pass
 
 if __name__ == "__main__":
     run(mapper, reducer)
