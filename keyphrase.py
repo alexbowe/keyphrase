@@ -1,5 +1,6 @@
 # Python libs
 import re
+from math import log
 
 # Third Party Libs
 from dumbo import *
@@ -8,13 +9,12 @@ from nltk.probability import FreqDist
 import nltk
 
 # My Libs
-import mycorpus
+from mycorpus import stopwords
 
 # Run Flags
 DEBUG = 0
 
 # Program Variables
-stopwords = mycorpus.stopwords
 minLength = 3
 maxLength = 40
 separator = ','
@@ -27,21 +27,25 @@ sentence_re = r'''(?x)      # set flag to allow verbose regexps
     | [][.,;"'?():-_`]      # these are separate tokens
 '''
 
+lemmatizer = nltk.WordNetLemmatizer()
+
 grammar = r"""
     NP: {<JJ>*<NN|NNP>+}    # Adjectives and (proper) nouns
 """
 chunker = nltk.RegexpParser(grammar)
-lemmatizer = nltk.WordNetLemmatizer()
-
-def acceptableLength(word):
-    return minLength <= len(word) <= maxLength
 
 def acceptable(word):
-    accepted = bool(acceptableLength(word) and word.lower() not in stopwords )
+    accepted = bool(minLength <= len(word) <= maxLength
+        and word.lower() not in stopwords )
     if DEBUG and not accepted:
         import sys
         sys.stderr.write("Not accepted: " + word + "\n")
     return accepted
+
+def normalise(word):
+    word = word.lower()
+    word = PorterStemmer().stem_word(word)
+    return word
 
 def genNGrams(words, n):
     for index, word in enumerate(words):
@@ -62,16 +66,8 @@ def genNGramsWindowed(words, n, w=0):
                     yield ngram
             
 def genNPLeaves(tree):
-    for subtree in tree.subtrees(filter=lambda t:t.node=='NP'):
+    for subtree in tree.subtrees(filter = lambda t:t.node=='NP'):
         yield subtree.leaves()
-
-# could change this to a function per word for map()
-def cleanWords(toks):
-    for word in toks:
-        if acceptable(word):
-            word = word.lower()
-            word = PorterStemmer().stem_word(word)
-            yield word
 
 # Mapper: Extracts Terms from a Document
 # IN : key = (docname, line#), value = line
@@ -89,7 +85,7 @@ def termMapper( (docname, lineNum), line):
     
     for leaf in genNPLeaves(chunkTree):
         words = map(lambda w:w[0], leaf)
-        words = list(cleanWords(words))
+        words = [ normalise(w) for w in words if acceptable(w) ]
         if len(words) > 0:
             term = ' '.join(words)
             yield (docname, term), 1
@@ -118,7 +114,6 @@ def docTermCountReducer(docname, values):
 def corpusTermCountMapper( (term, docname), (n, N)):
     yield term, (docname, n, N, 1)
 
-from math import log
 class CorpusTermCountReducer:
     def __init__(self):
         self.doccount = float(self.params['doccount'])
@@ -129,14 +124,11 @@ class CorpusTermCountReducer:
             yield (term, docname), (float(n)/N) * log(self.doccount / m)
 
 def finalMapper((term, docname), tf_idf):
-    yield docname, (term, tf_idf)
+    if tf_idf >= 0.10:
+        yield docname, term
 
-def finalReducer(docname, values):
-    fd = FreqDist()
-    for (term, tf_idf) in values:
-        fd.inc(term, tf_idf)
-    phrases = fd.keys()[:15]
-    yield docname, separator.join(phrases)
+def finalReducer(docname, terms):
+    yield docname, separator.join(terms)
 
 def runner(job):
     job.additer(termMapper, sumreducer, combiner = sumreducer)
