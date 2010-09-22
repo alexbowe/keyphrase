@@ -5,7 +5,6 @@ import re
 from dumbo import *
 from nltk.stem.porter import PorterStemmer
 from nltk.probability import FreqDist
-from nltk import word_tokenize
 import nltk
 
 # My Libs
@@ -16,33 +15,33 @@ DEBUG = 0
 
 # Program Variables
 stopwords = mycorpus.stopwords
-badChars = re.compile(r'[^\w\-\/\.]')
-stripChars = re.compile(r'[,\'\"\d]')
 minLength = 3
 maxLength = 40
 separator = ','
 
+sentence_re = r'''(?x)      # set flag to allow verbose regexps
+      ([A-Z])(\.[A-Z])+\.?  # abbreviations, e.g. U.S.A.
+    | \w+(-\w+)*            # words with optional internal hyphens
+    | \$?\d+(\.\d+)?%?      # currency and percentages, e.g. $12.40, 82%
+    | \.\.\.                # ellipsis
+    | [][.,;"'?():-_`]      # these are separate tokens
+'''
+
+grammar = r"""
+    NP: {<JJ>*<NN|NNP>+}    # Adjectives and (proper) nouns
+"""
+chunker = nltk.RegexpParser(grammar)
+lemmatizer = nltk.WordNetLemmatizer()
+
 def acceptableLength(word):
     return minLength <= len(word) <= maxLength
 
-def isClean(word):
-    return not bool(badChars.search(word))
-
 def acceptable(word):
-    accepted = bool( isClean(word) and acceptableLength(word) and
-        word.lower() not in stopwords )
+    accepted = bool(acceptableLength(word) and word.lower() not in stopwords )
     if DEBUG and not accepted:
         import sys
         sys.stderr.write("Not accepted: " + word + "\n")
     return accepted
-
-def cleanUpWord(word):
-    from string import strip, rstrip
-    # Strip unwanted symbols (quotes, %, etc...)
-    cleanword = stripChars.sub(' ', word)
-    cleanword = rstrip(cleanword, '.')
-    cleanword = strip(cleanword, '-')
-    return cleanword
 
 def genNGrams(words, n):
     for index, word in enumerate(words):
@@ -69,18 +68,10 @@ def genNPLeaves(tree):
 # could change this to a function per word for map()
 def cleanWords(toks):
     for word in toks:
-        # clean up
-        word = cleanUpWord(word)
         if acceptable(word):
             word = word.lower()
             word = PorterStemmer().stem_word(word)
             yield word
-
-grammar = r"""
-    NP: {<JJ>*<NN|NNP>+}    # Adjectives and (proper) nouns
-"""
-chunker = nltk.RegexpParser(grammar)
-lemmatizer = nltk.WordNetLemmatizer()
 
 # Mapper: Extracts Terms from a Document
 # IN : key = (docname, line#), value = line
@@ -91,7 +82,7 @@ def termMapper( (docname, lineNum), line):
     if DEBUG and lineNum is 0:
         import sys
         sys.stderr.write(str(docname) + ", " + str(lineNum) +": " + line + "\n")
-    toks = word_tokenize(line)
+    toks = nltk.regexp_tokenize(line, sentence_re)
     toks = [ lemmatizer.lemmatize(t) for t in toks ]
     postoks = nltk.tag.pos_tag(toks)
     chunkTree = chunker.parse(postoks)
@@ -144,7 +135,7 @@ def finalReducer(docname, values):
     fd = FreqDist()
     for (term, tf_idf) in values:
         fd.inc(term, tf_idf)
-    phrases = fd.keys()[:10]
+    phrases = fd.keys()[:15]
     yield docname, separator.join(phrases)
 
 def runner(job):
