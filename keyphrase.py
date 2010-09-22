@@ -56,7 +56,7 @@ def genNGramsWindowed(words, n, w=0):
     for index, word in enumerate(words):
         window = words[index+1:index+w]
         from itertools import combinations
-        if len(window) > n -1:
+        if len(window) > n-1:
             for c in combinations(window, n-1):
                 ngram = [word] + list(c)
                 if len(ngram) is n:
@@ -76,8 +76,11 @@ def cleanWords(toks):
             word = PorterStemmer().stem_word(word)
             yield word
 
-grammar = "NP: {<DT>?<JJ>*<NN>+}"
+grammar = r"""
+    NP: {<JJ>*<NN|NNP>+}    # Adjectives and (proper) nouns
+"""
 chunker = nltk.RegexpParser(grammar)
+lemmatizer = nltk.WordNetLemmatizer()
 
 # Mapper: Extracts Terms from a Document
 # IN : key = (docname, line#), value = line
@@ -89,6 +92,7 @@ def termMapper( (docname, lineNum), line):
         import sys
         sys.stderr.write(str(docname) + ", " + str(lineNum) +": " + line + "\n")
     toks = word_tokenize(line)
+    toks = [ lemmatizer.lemmatize(t) for t in toks ]
     postoks = nltk.tag.pos_tag(toks)
     chunkTree = chunker.parse(postoks)
     
