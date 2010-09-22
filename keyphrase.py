@@ -2,7 +2,7 @@
 import re
 
 # Third Party Libs
-from dumbo import opt, run
+from dumbo import *
 from nltk.stem.porter import PorterStemmer
 from nltk.probability import FreqDist
 from nltk import word_tokenize
@@ -20,7 +20,6 @@ badChars = re.compile(r'[^\w\-\/\.]')
 stripChars = re.compile(r'[,\'\"\d]')
 minLength = 3
 maxLength = 40
-numKeyphrases = 10
 separator = ','
 
 def acceptableLength(word):
@@ -80,48 +79,76 @@ def cleanWords(toks):
 grammar = "NP: {<DT>?<JJ>*<NN>+}"
 chunker = nltk.RegexpParser(grammar)
 
-# Takes (filename, line-num) pairs as keys, and a segment of text as the value
-# Outputs filenames as keys, and a list of (word, freq) pairs
+# Mapper: Extracts Terms from a Document
+# IN : key = (docname, line#), value = line
+# OUT: (docname, term), 1
 # Requires -addpath yes flag
 @opt("addpath", "yes")
-def mapper(key, value):
-    if DEBUG and key[1] is 0:
+def termMapper( (docname, lineNum), line):
+    if DEBUG and lineNum is 0:
         import sys
-        sys.stderr.write(str(key[0]) + ", " + str(key[1]) +": " + value + "\n")
-    fd = FreqDist()
-    value = stripChars.sub(' ', value)
-    toks = word_tokenize(value)
+        sys.stderr.write(str(docname) + ", " + str(lineNum) +": " + line + "\n")
+    value = stripChars.sub(' ', line)
+    toks = word_tokenize(line)
     postoks = nltk.tag.pos_tag(toks)
-    #cleanToks = list(cleanWords(toks))
+    chunkTree = chunker.parse(postoks)
     
-    t = chunker.parse(postoks)
-    for l in genNPLeaves(t):
-        words = map(lambda w:w[0], l)
+    for leaf in genNPLeaves(chunkTree):
+        words = map(lambda w:w[0], leaf)
         words = list(cleanWords(words))
-        gram = ' '.join(words)
-        fd.inc(gram, 1)
-    
-    #for n in range(1,4):
-    #    for gram in genNGrams(cleanToks, n, 5):
-    #        gram = ' '.join(gram)
-    #        import math
-    #        # rating needed here, if i use a FreqDist
-    #        fd.inc(gram, math.log(n))
-    
-    yield key[0], fd.items()
+        if len(words) > 0:
+            term = ' '.join(words)
+            yield (docname, term), 1
 
-# Takes filenames as keys, and a list of (word, freq) pairs
-# Outputs filename as key, and a comma separated string of top N words
-def reducer(key, values):
+# IN : (docname, term), n
+# OUT: docname, (term, n)
+# n - term-count for the doc
+def docTermCountMapper( (docname, term), n):
+    yield docname, (term, n)
+    
+# IN : docname, (term, n)-list
+# OUT: (term, docname), (n, N)
+# n - term-count for the doc
+# N - term-count for all docs
+def docTermCountReducer(docname, values):
+    values = list(values)
+    # Total count of term across all docs
+    N = sum(n for (term, n) in values)
+    for (term, n) in values:
+        yield (term, docname), (n, N)
+
+# IN : (term, docname), (n, N)
+# OUT: term, (docname, n, N, 1)
+# n - term-count for the doc
+# N - term-count for all docs
+def corpusTermCountMapper( (term, docname), (n, N)):
+    yield term, (docname, n, N, 1)
+
+from math import log
+class CorpusTermCountReducer:
+    def __init__(self):
+        self.doccount = float(self.params['doccount'])
+    def __call__(self, term, values):
+        values = list(values)
+        m = sum(c for (docname, n, N, c) in values)
+        for (docname, n, N) in (v[:3] for v in values):
+            yield (term, docname), (float(n)/N) * log(self.doccount / m)
+
+def finalMapper((term, docname), tf_idf):
+    yield docname, (term, tf_idf)
+    
+def finalReducer(docname, values):
     fd = FreqDist()
-    for row in values:
-        for word, freq in row:
-            fd.inc(word, freq)
-    keyphrases = fd.keys()
-    yield key, separator.join(keyphrases)
+    for (term, tf_idf) in values:
+        fd.inc(term, tf_idf)
+    phrases = fd.keys()[:10]
+    yield docname, separator.join(phrases)
 
 def runner(job):
-    pass
+    job.additer(termMapper, sumreducer, combiner = sumreducer)
+    job.additer(docTermCountMapper, docTermCountReducer)
+    job.additer(corpusTermCountMapper, CorpusTermCountReducer)
+    job.additer(finalMapper, finalReducer)
 
 if __name__ == "__main__":
-    run(mapper, reducer)
+    main(runner)
