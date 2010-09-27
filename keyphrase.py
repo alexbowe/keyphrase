@@ -46,24 +46,6 @@ def normalise(word):
     word = word.lower()
     word = PorterStemmer().stem_word(word)
     return word
-
-def genNGrams(words, n):
-    for index, word in enumerate(words):
-        ngram = words[index:index+n]
-        if len(ngram) is n:
-            yield ngram
-            
-def genNGramsWindowed(words, n, w=0):
-    if w < n:
-        w = n
-    for index, word in enumerate(words):
-        window = words[index+1:index+w]
-        from itertools import combinations
-        if len(window) > n-1:
-            for c in combinations(window, n-1):
-                ngram = [word] + list(c)
-                if len(ngram) is n:
-                    yield ngram
             
 def genNPLeaves(tree):
     for subtree in tree.subtrees(filter = lambda t:t.node=='NP'):
@@ -84,7 +66,7 @@ def termMapper( (docname, lineNum), line):
     chunkTree = chunker.parse(postoks)
     
     for leaf in genNPLeaves(chunkTree):
-        words = map(lambda w:w[0], leaf)
+        words = [w for w,t in leaf]
         words = [ normalise(w) for w in words if acceptable(w) ]
         if len(words) > 0:
             term = ' '.join(words)
