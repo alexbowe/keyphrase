@@ -7,6 +7,7 @@ from dumbo import *
 from nltk.stem.porter import PorterStemmer
 from nltk.probability import FreqDist
 import nltk
+import sys
 
 # My Libs
 from mycorpus import stopwords
@@ -29,17 +30,24 @@ sentence_re = r'''(?x)      # set flag to allow verbose regexps
 
 lemmatizer = nltk.WordNetLemmatizer()
 
+import pickle
+infile = open('pos_tag.pkl', 'rb')
+pos = pickle.load(infile)
+infile.close()
+
 grammar = r"""
-    NP: {<JJ>*<NN|NNP>+}    # Adjectives and (proper) nouns
+    NBAR:
+        {<NN.*|JJ*>*<NN.*>}
+        
+    NP:
+        {<NBAR>}
+        {<NBAR><IN><NBAR>}
 """
 chunker = nltk.RegexpParser(grammar)
 
 def acceptable(word):
     accepted = bool(minLength <= len(word) <= maxLength
         and word.lower() not in stopwords )
-    if DEBUG and not accepted:
-        import sys
-        sys.stderr.write("Not accepted: " + word + "\n")
     return accepted
 
 def normalise(word):
@@ -47,8 +55,8 @@ def normalise(word):
     word = PorterStemmer().stem_word(word)
     return word
             
-def genNPLeaves(tree):
-    for subtree in tree.subtrees(filter = lambda t:t.node=='NP'):
+def leaves(tree):
+    for subtree in tree.subtrees(filter = lambda t: t.node=='NP'):
         yield subtree.leaves()
 
 # Mapper: Extracts Terms from a Document
@@ -58,18 +66,15 @@ def genNPLeaves(tree):
 @opt("addpath", "yes")
 def termMapper( (docname, lineNum), line):
     if DEBUG and lineNum is 0:
-        import sys
         sys.stderr.write(str(docname) + ", " + str(lineNum) +": " + line + "\n")
     toks = nltk.regexp_tokenize(line, sentence_re)
     toks = [ lemmatizer.lemmatize(t) for t in toks ]
-    postoks = nltk.tag.pos_tag(toks)
-    chunkTree = chunker.parse(postoks)
+    postoks = pos.tag(toks)
+    tree = chunker.parse(postoks)
     
-    for leaf in genNPLeaves(chunkTree):
-        words = [w for w,t in leaf]
-        words = [ normalise(w) for w in words if acceptable(w) ]
-        if len(words) > 0:
-            term = ' '.join(words)
+    for leaf in leaves(tree):
+        term = [ normalise(w) for w,t in leaf if acceptable(w) ]
+        if len(term) > 0 and len(term) <= 4:
             yield (docname, term), 1
 
 # IN : (docname, term), n
@@ -106,10 +111,22 @@ class CorpusTermCountReducer:
             yield (term, docname), (float(n)/N) * log(self.doccount / m)
 
 def finalMapper((term, docname), tf_idf):
-    if tf_idf >= 0.10:
+    if tf_idf >= 0.11:
         yield docname, term
 
+def rPrecision(a, b):
+    a = set(a)
+    b = set(b)
+    overlap = len(a.intersection(b))
+    return float(overlap)/max(len(a), len(b))
+
 def finalReducer(docname, terms):
+    # upper = terms[:n]
+    # lower = terms[n:]
+    # for a in upper:
+    #     for b in lower:
+    #         r = rPrecision(a, b)
+    terms = [' '.join(w) for w in terms]
     yield docname, separator.join(terms)
 
 def runner(job):
