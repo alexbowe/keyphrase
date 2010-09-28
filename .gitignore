@@ -3,3 +3,7 @@
 
 ## Compiled stuff
 *.pyc
+
+## output
+*.out
+diagnostics
