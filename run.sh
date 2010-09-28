@@ -82,6 +82,8 @@ mv $LOC_OUTPUT.formatted $LOC_OUTPUT
 sort -n $LOC_OUTPUT > $LOC_OUTPUT.sorted
 mv $LOC_OUTPUT.sorted $LOC_OUTPUT
 
+exit
+
 # Assess the performance
 ./performance.pl $LOC_OUTPUT
 

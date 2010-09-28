@@ -4,7 +4,6 @@ from math import log
 
 # Third Party Libs
 from dumbo import *
-from nltk.stem.porter import PorterStemmer
 from nltk.probability import FreqDist
 import nltk
 import sys
@@ -16,8 +15,11 @@ from mycorpus import stopwords
 DEBUG = 0
 
 # Program Variables
+titleWeight = 3
 minLength = 3
 maxLength = 40
+maxGram = 4
+min_tf_idf = 0.11
 separator = ','
 
 sentence_re = r'''(?x)      # set flag to allow verbose regexps
@@ -29,6 +31,7 @@ sentence_re = r'''(?x)      # set flag to allow verbose regexps
 '''
 
 lemmatizer = nltk.WordNetLemmatizer()
+stemmer = nltk.stem.porter.PorterStemmer()
 
 import pickle
 infile = open('pos_tag.pkl', 'rb')
@@ -45,19 +48,28 @@ grammar = r"""
 """
 chunker = nltk.RegexpParser(grammar)
 
-def acceptable(word):
+def leaves(tree):
+    for subtree in tree.subtrees(filter = lambda t: t.node=='NP'):
+        yield subtree.leaves()
+
+def normalise(word):
+    word = word.lower()
+    word = stemmer.stem_word(word)
+    return word
+
+def acceptableWord(word):
     accepted = bool(minLength <= len(word) <= maxLength
         and word.lower() not in stopwords )
     return accepted
 
-def normalise(word):
-    word = word.lower()
-    word = PorterStemmer().stem_word(word)
-    return word
-            
-def leaves(tree):
-    for subtree in tree.subtrees(filter = lambda t: t.node=='NP'):
-        yield subtree.leaves()
+def acceptableGram(gram):
+    return bool(1 <= len(gram) <= maxGram)
+
+def rPrecision(a, b):
+    a = set(a)
+    b = set(b)
+    overlap = len(a.intersection(b))
+    return float(overlap)/max(len(a), len(b))
 
 # Mapper: Extracts Terms from a Document
 # IN : key = (docname, line#), value = line
@@ -65,17 +77,16 @@ def leaves(tree):
 # Requires -addpath yes flag
 @opt("addpath", "yes")
 def termMapper( (docname, lineNum), line):
-    if DEBUG and lineNum is 0:
-        sys.stderr.write(str(docname) + ", " + str(lineNum) +": " + line + "\n")
     toks = nltk.regexp_tokenize(line, sentence_re)
     toks = [ lemmatizer.lemmatize(t) for t in toks ]
     postoks = pos.tag(toks)
     tree = chunker.parse(postoks)
     
     for leaf in leaves(tree):
-        term = [ normalise(w) for w,t in leaf if acceptable(w) ]
-        if len(term) > 0 and len(term) <= 4:
-            yield (docname, term), 1
+        term = [ normalise(w) for w,t in leaf if acceptableWord(w) ]
+        weight = 1
+        if lineNum is 0: weight = titleWeight
+        yield (docname, term), 1 * weight
 
 # IN : (docname, term), n
 # OUT: docname, (term, n)
@@ -98,27 +109,24 @@ def docTermCountReducer(docname, values):
 # OUT: term, (docname, n, N, 1)
 # n - term-count for the doc
 # N - term-count for all docs
-def corpusTermCountMapper( (term, docname), (n, N)):
+def corpusTermCountMapper( (term, docname), (n, N) ):
     yield term, (docname, n, N, 1)
 
 class CorpusTermCountReducer:
     def __init__(self):
+        # get -param doccount
         self.doccount = float(self.params['doccount'])
     def __call__(self, term, values):
         values = list(values)
         m = sum(c for (docname, n, N, c) in values)
+        idf = log(self.doccount / m)
         for (docname, n, N) in (v[:3] for v in values):
-            yield (term, docname), (float(n)/N) * log(self.doccount / m)
+            tf = (float(n)/N)
+            yield docname, (term, tf * idf)
 
-def finalMapper((term, docname), tf_idf):
-    if tf_idf >= 0.11:
+def finalMapper(docname, (term, tf_idf) ):
+    if tf_idf >= min_tf_idf:
         yield docname, term
-
-def rPrecision(a, b):
-    a = set(a)
-    b = set(b)
-    overlap = len(a.intersection(b))
-    return float(overlap)/max(len(a), len(b))
 
 def finalReducer(docname, terms):
     # upper = terms[:n]
@@ -126,7 +134,7 @@ def finalReducer(docname, terms):
     # for a in upper:
     #     for b in lower:
     #         r = rPrecision(a, b)
-    terms = [' '.join(w) for w in terms]
+    terms = [' '.join(t) for t in terms if acceptableGram(t)]
     yield docname, separator.join(terms)
 
 def runner(job):
