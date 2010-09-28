@@ -2,7 +2,7 @@
 DEPS=deps
 HADOOP=$HADOOP_HOME/bin/hadoop
 LOG=dumbo.log
-LOC_INPUT=text
+LOC_INPUT=train_text
 DFS_INPUT=dfs_${LOC_INPUT}
 LOC_OUTPUT=3134434.out
 DFS_OUTPUT=dfs_${LOC_OUTPUT}
@@ -82,7 +82,7 @@ mv $LOC_OUTPUT.formatted $LOC_OUTPUT
 sort -n $LOC_OUTPUT > $LOC_OUTPUT.sorted
 mv $LOC_OUTPUT.sorted $LOC_OUTPUT
 
-exit
+#exit
 
 # Assess the performance
 ./performance.pl $LOC_OUTPUT
