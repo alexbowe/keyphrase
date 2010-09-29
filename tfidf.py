@@ -11,17 +11,23 @@ def tfidf(n, N, d, D):
     idf = log(float(D) / d)
     return tf * idf
 
-# n - term-count for the doc
-# N - term-count for all docs
-# payload - optional package that gets carried to the end
-# IN : (docname, term), (payload, n)
-# OUT: docname, (term, payload, n)
 def docTermCountMapper( (docname, term), (payload, n)):
+    """
+    Reorders input for next phase (which is per document).
+    
+    OUT: docname, (term, payload, n)
+    n is the number of occurences of this term in this document.
+    """
     yield docname, (term, payload, n)
     
-# IN : docname, (term, payload, n)-list
-# OUT: (term, docname), (payload, n, N)
 def docTermCountReducer(docname, values):
+    """
+    Calculates the total count of terms in this document.
+    
+    OUT: (term, docname), (payload, n, N)
+    n is the number of occurences of this term in this document.
+    N is the total number of terms in this document.
+    """
     values = list(values)
     # Total count of term across all docs
     N = sum(n for (term, payload, n) in values)
@@ -31,25 +37,41 @@ def docTermCountReducer(docname, values):
 # IN : (term, docname), (payload, n, N)
 # OUT: term, (docname, payload, n, N, 1)
 def corpusTermCountMapper( (term, docname), (payload, n, N) ):
+    """
+    Reorders the input to enable counting of how many documents
+    this term appears in.
+    
+    OUT: term, (docname, payload, n, N, 1)
+    n is the number of occurences of this term in this document.
+    N is the total number of terms in this document.
+    """
     yield term, (docname, payload, n, N, 1)
 
 def corpusTermCountCombiner(term, values):
+    """Combiner to sum the count of how many documents this term appears in."""
     values = list(values)
     d = sum(v[-1] for v in values)
     for v in values:
         v = list(v)
         yield term, tuple(v[:-1] + [d])
 
-# IN : term, (docname, (payload, n, N, 1)
-# OUT: term, (docname, payload, n, N, 1)
 def corpusTermCountReducer(term, values):
+    """
+    Reorders the output to be per document (rather than per term) and
+    finishes summing the number of times the term appears across the corpus.
+    
+    OUT: docname, (term, payload, n, N, d)
+    n is the number of occurences of this term in this document.
+    N is the total number of terms in this document.
+    d is the number of documents this term appears in.
+    """
     values = list(values)
     d = sum(c for (docname, payload, n, N, c) in values)
     for (docname, payload, n, N) in (v[:4] for v in values):
         yield docname, (term, payload, n, N, d)
 
 def add_iters(job):
-    #from dumbo import *
+    """Utility function for adding the TFIDF iterations in the right order."""
     job.additer(docTermCountMapper, docTermCountReducer)
     job.additer(corpusTermCountMapper, corpusTermCountReducer,
         combiner = corpusTermCountCombiner)
