@@ -1,7 +1,7 @@
 # Python libs
 import re
 import pickle
-from math import log, sqrt
+from math import log
 
 # Third Party Libs
 from dumbo import *
@@ -14,6 +14,7 @@ from mycorpus import stopwords
 minLength = 3
 maxLength = 40
 maxGram = 4
+upper_fraction = 0.5
 separator = ','
 
 sentence_re = r'''(?x)      # set flag to allow verbose regexps
@@ -74,22 +75,22 @@ def termMapper( (docname, lineNum), line):
     postoks = postagger.tag(toks)
     tree = chunker.parse(postoks)
     
-    pos = 0
+    position = 0
     for leaf in leaves(tree):
         term = [ normalise(w) for w,t in leaf if acceptableWord(w) ]
         if not acceptableGram(t):
             continue
-        payload = (lineNum is 0, pos)
+        payload = (lineNum is 0, position)
         yield (docname, term), (payload, 1)
-        pos += 1
+        position += 1
+
+def reducePayloads(a, b):
+    return a[0] or b[0], min(a[1], b[1])
 
 def termReducer( (docname, term), values ):
     values = list(values)
-    inT = [ inT for _,inT in (p for p,n in values)]
-    inT = reduce(lambda a,b: a or b, inT)
-    pos = min( [ pos for pos,_ in (p for p,n in values) ] )
+    payload = reduce(reducePayloads, [p for p,n in values])
     n = sum( [ n for p,n in values ] )
-    payload = (inT, pos)
     yield (docname, term), (payload, n)
 
 # n - term-count for the doc
@@ -114,6 +115,15 @@ def docTermCountReducer(docname, values):
 def corpusTermCountMapper( (term, docname), (payload, n, N) ):
     yield term, (docname, payload, n, N, 1)
 
+def corpusTermCountCombiner(term, values):
+    values = list(values)
+    m = sum(v[-1] for v in values)
+    for v in values:
+        v = list(v)
+        yield term, tuple(v[:-1] + [m])
+
+# IN : term, (docname, (payload, n, N, 1)
+# OUT: term, (docname, payload, n, N, 1)
 def corpusTermCountReducer(term, values):
     values = list(values)
     m = sum(c for (docname, payload, n, N, c) in values)
@@ -126,9 +136,9 @@ class FinalReducer:
     def __call__(self, docname, values):
         terms = []
         fd = nltk.probability.FreqDist()
-    
-        for (term, (inTitle, pos), n, N, m) in values:
-            relativePos = float(pos)/m
+        
+        for (term, (inTitle, position), n, N, m) in values:
+            #relativePos = float(position)/m
             tf = float(n)/N
             idf = log(self.doccount / m)
             tf_idf = tf * idf
@@ -137,17 +147,19 @@ class FinalReducer:
             if inTitle:
                 terms.append(term_str)
             else:
-                score = tf_idf #* relative_pos
+                score = tf_idf # * relative_pos
                 fd.inc(term_str, score)
-    
-        # top 50% of terms
-        terms += fd.keys()[:len(fd)*1/2]
+        
+        # top upper_fraction of terms
+        n = int(upper_fraction * len(fd))
+        terms += fd.keys()[:n]
         yield docname, separator.join(terms)
 
 def runner(job):
     job.additer(termMapper, termReducer, combiner = termReducer)
     job.additer(docTermCountMapper, docTermCountReducer)
-    job.additer(corpusTermCountMapper, corpusTermCountReducer)
+    job.additer(corpusTermCountMapper, corpusTermCountReducer,
+        combiner = corpusTermCountCombiner)
     job.additer(identitymapper, FinalReducer)
 
 if __name__ == "__main__":
