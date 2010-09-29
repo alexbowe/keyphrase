@@ -51,7 +51,7 @@ def normalise(word):
 
 def acceptableWord(word):
     accepted = bool(minLength <= len(word) <= maxLength
-        and word.lower() not in stopwords )
+        and word.lower() not in stopwords)
     return accepted
 
 def acceptableGram(gram):
@@ -114,40 +114,41 @@ def docTermCountReducer(docname, values):
 def corpusTermCountMapper( (term, docname), (payload, n, N) ):
     yield term, (docname, payload, n, N, 1)
 
-class CorpusTermCountReducer:
-    def __init__(self):
-        # get -param doccount
-        self.doccount = float(self.params['doccount'])
-    def __call__(self, term, values):
-        values = list(values)
-        m = sum(c for (docname, payload, n, N, c) in values)
-        idf = log(self.doccount / m)
-        for (docname, payload, n, N) in (v[:4] for v in values):
-            tf = (float(n)/N)
-            relative_pos = float(payload[1])/n
-            yield docname, (term, (payload[0], relative_pos), tf * idf)
-
-def finalReducer(docname, values):
-    terms = []
-    fd = nltk.probability.FreqDist()
+def corpusTermCountReducer(term, values):
     values = list(values)
-    for term, (inTitle, relative_pos), tf_idf in values:
-        term_str = ' '.join(term)
-        
-        if inTitle:
-            terms.append(term_str)
-        else:
-            score = tf_idf #* relative_pos
-            fd.inc(term_str, score)
+    m = sum(c for (docname, payload, n, N, c) in values)
+    for (docname, payload, n, N) in (v[:4] for v in values):
+        yield docname, (term, payload, n, N, m)
+
+class FinalReducer:
+    def __init__(self):
+        self.doccount = float(self.params['doccount'])
+    def __call__(self, docname, values):
+        terms = []
+        fd = nltk.probability.FreqDist()
     
-    terms += fd.keys()[:len(fd)*1/2]
-    yield docname, separator.join(terms)
+        for (term, (inTitle, pos), n, N, m) in values:
+            relativePos = float(pos)/m
+            tf = float(n)/N
+            idf = log(self.doccount / m)
+            tf_idf = tf * idf
+            term_str = ' '.join(term)
+        
+            if inTitle:
+                terms.append(term_str)
+            else:
+                score = tf_idf #* relative_pos
+                fd.inc(term_str, score)
+    
+        # top 50% of terms
+        terms += fd.keys()[:len(fd)*1/2]
+        yield docname, separator.join(terms)
 
 def runner(job):
     job.additer(termMapper, termReducer, combiner = termReducer)
     job.additer(docTermCountMapper, docTermCountReducer)
-    job.additer(corpusTermCountMapper, CorpusTermCountReducer)
-    job.additer(identitymapper, finalReducer)
+    job.additer(corpusTermCountMapper, corpusTermCountReducer)
+    job.additer(identitymapper, FinalReducer)
 
 if __name__ == "__main__":
     main(runner)
