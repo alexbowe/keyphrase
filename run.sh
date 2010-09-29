@@ -2,7 +2,7 @@
 DEPS=deps
 HADOOP=$HADOOP_HOME/bin/hadoop
 LOG=dumbo.log
-LOC_INPUT=train_text
+LOC_INPUT=test_text
 DFS_INPUT=dfs_${LOC_INPUT}
 LOC_OUTPUT=3134434.out
 DFS_OUTPUT=dfs_${LOC_OUTPUT}

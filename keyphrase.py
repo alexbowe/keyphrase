@@ -26,11 +26,11 @@ with open('pos_tag.pkl', 'rb') as f:
 
 grammar = r"""
     NBAR:
-        {<NN.*|JJ>*<NN.*>}
+        {<NN.*|JJ>*<NN.*>}  # Nouns and Adjectives, terminated with Nouns
         
     NP:
         {<NBAR>}
-        {<NBAR><IN><NBAR>}
+        {<NBAR><IN><NBAR>}  # Above, connected with in/of/etc...
 """
 chunker = nltk.RegexpParser(grammar)
 
