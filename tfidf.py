@@ -1,3 +1,6 @@
+# NOTE: could be improved for memory using multi-mapper methods detailed here:
+# http://dumbotics.com/tag/tf-idf/
+
 def tfidf(n, N, d, D):
     """
     Calculates TF-IDF score from:
