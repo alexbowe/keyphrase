@@ -41,7 +41,7 @@ fi
 if [ $DISTRIB ]; then
     INPUT=$DFS_INPUT
     OUTPUT=$DFS_OUTPUT
-    DIST_ARGS="-hadoop $HADOOP_HOME -file mycorpus.py"
+    DIST_ARGS="-hadoop $HADOOP_HOME -file mycorpus.py tfidf.py"
 else
     INPUT=$LOC_INPUT
     OUTPUT=$LOC_OUTPUT
@@ -82,7 +82,7 @@ mv $LOC_OUTPUT.formatted $LOC_OUTPUT
 sort -n $LOC_OUTPUT > $LOC_OUTPUT.sorted
 mv $LOC_OUTPUT.sorted $LOC_OUTPUT
 
-#exit
+exit
 
 # Assess the performance
 ./performance.pl $LOC_OUTPUT
