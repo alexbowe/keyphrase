@@ -39,6 +39,7 @@ Dependencies
 
 **NOT PROVIDED**:
 
+ * [Numpy](http://numpy.scipy.org)
  * [Hadoop](http://hadoop.apache.org/)
  * [Dumbo](http://klbostee.github.com/dumbo/)
  * [Perl](www.perl.org)

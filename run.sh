@@ -21,7 +21,7 @@ echo " mode"
 # Remove previous run if it exists
 echo "Removing previous results..."
 if [ $DISTRIB ]; then
-    $HADOOP fs -rmr $DFS_OUTPUT > /dev/null 2> /dev/null
+    $HADOOP fs -rmr $DFS_OUTPUT* > /dev/null 2> /dev/null
 fi
 rm $LOC_OUTPUT 2> /dev/null
 
@@ -32,7 +32,7 @@ if [ $DISTRIB ]; then
     RESULT=$($HADOOP fs -ls $DFS_INPUT 2> /dev/null)
     if [ ${#RESULT} -eq 0 ]; then 
         echo "Moving input files to HDFS..."
-        $HADOOP fs -moveFromLocal $LOC_INPUT $DFS_INPUT
+        $HADOOP fs -put $LOC_INPUT $DFS_INPUT
     else
         echo "Input files are already on HDFS..."
     fi
@@ -48,7 +48,9 @@ else
     OUTPUT=$LOC_OUTPUT
 fi
 
+echo "bla"
 DOCCOUNT=$(ls -1 $LOC_INPUT | wc -l)
+echo "bla2"
 
 # Run the MapReduce program via Dumbo
 echo "Beginning Dumbo Program..."
