@@ -20,9 +20,10 @@ sentence_re = r'''(?x)      # set flag to allow verbose regexps
 lemmatizer = nltk.WordNetLemmatizer()
 stemmer = nltk.stem.porter.PorterStemmer()
 
-import pickle
-with open('pos_tag.pkl', 'rb') as f:
-    postagger = pickle.load(f)
+from cPickle import load
+f = open('pos_tag.pkl', 'rb')
+postagger = load(f)
+f.close()
 
 grammar = r"""
     NBAR:

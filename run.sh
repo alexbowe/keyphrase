@@ -41,7 +41,8 @@ fi
 if [ $DISTRIB ]; then
     INPUT=$DFS_INPUT
     OUTPUT=$DFS_OUTPUT
-    DIST_ARGS="-hadoop $HADOOP_HOME -file mycorpus.py tfidf.py"
+    DIST_ARGS="-hadoop $HADOOP_HOME -file mycorpus.py -file tfidf.py \
+               -file pos_tag.pkl"
 else
     INPUT=$LOC_INPUT
     OUTPUT=$LOC_OUTPUT
