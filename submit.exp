@@ -12,7 +12,7 @@ set dir ~
 # Turnin Details - change files to reflect assignment
 set submit turnin
 set submit_flags -ccosc2305
-set files {keyphrase.py tfidf.py mycorpus.py run.sh 3134434.out diagnostics format.pl}
+set files {keyphrase.py tfidf.py mycorpus.py run.sh 3134434.out_1 3134434.out_2 3134434.out_3 diagnostics format.pl}
 set timeout -1
 
 # Copy files to Yallara
@@ -27,7 +27,7 @@ foreach file $files {
 
 # Turnin files
 spawn ssh $user@$host
-# Look for passwod prompt
+# Look for password prompt
 expect "*?assword:*"
 # Send password aka $password
 send -- "$password\r"
