@@ -48,9 +48,7 @@ else
     OUTPUT=$LOC_OUTPUT
 fi
 
-echo "bla"
 DOCCOUNT=$(ls -1 $LOC_INPUT | wc -l)
-echo "bla2"
 
 # Run the MapReduce program via Dumbo
 echo "Beginning Dumbo Program..."
