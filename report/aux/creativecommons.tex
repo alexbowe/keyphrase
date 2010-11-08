@@ -1,0 +1,91 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% ccBeamer 0.1, 2007-07-02                                   %%
+%% Written by Sebastian Pipping <webmaster@hartwork.org>      %%
+%% ---------------------------------------------------------- %%
+%% Licensed under Creative Commons Attribution-ShareAlike 3.0 %%
+%% http://creativecommons.org/licenses/by-sa/3.0/             %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Modifications:
+%% 
+%%  * Changed the #1 argument of the macros to support more flexible sizing
+%%  * Adapted paths and minor tweaks in text's hyphens
+%% 
+%% -- Guy K. Kloss <g.kloss@massey.ac.nz>, 2009-05-27
+
+%% Images
+\newcommand{\CcImageBy}[1]{%
+	\includegraphics[#1]{LicenseDisclaimer/cc_by_30}%
+}
+\newcommand{\CcImageCc}[1]{%
+	\includegraphics[#1]{LicenseDisclaimer/cc_cc_30}%
+}
+\newcommand{\CcImageDevNations}[1]{%
+	\includegraphics[#1]{LicenseDisclaimer/cc_dev_nations_30}%
+}
+\newcommand{\CcImageNc}[1]{%
+	\includegraphics[#1]{LicenseDisclaimer/cc_nc_30}%
+}
+\newcommand{\CcImageNd}[1]{%
+	\includegraphics[#1]{LicenseDisclaimer/cc_nd_30}%
+}
+\newcommand{\CcImagePd}[1]{%
+	\includegraphics[#1]{LicenseDisclaimer/cc_pd_30}%
+}
+\newcommand{\CcImageSa}[1]{%
+	\includegraphics[#1]{LicenseDisclaimer/cc_sa_30}%
+}
+\newcommand{\CcImageSampling}[1]{%
+	\includegraphics[#1]{LicenseDisclaimer/cc_sampling_30}%
+}
+\newcommand{\CcImageSamplingPlus}[1]{%
+	\includegraphics[#1]{LicenseDisclaimer/cc_sampling_plus_30}%
+}
+
+
+%% Groups
+\newcommand{\CcGroupBy}[1]{% zoom
+	\CcImageBy{#1}%
+}
+\newcommand{\CcGroupByNc}[2]{% zoom, gap
+	\CcImageBy{#1}\hspace*{#2}\CcImageNc{#1}%
+}
+\newcommand{\CcGroupByNcNd}[2]{% zoom, gap
+	\CcImageBy{#1}\hspace*{#2}\CcImageNc{#1}\hspace*{#2}\CcImageNd{#1}%
+}
+\newcommand{\CcGroupByNcSa}[2]{% zoom, gap
+	\CcImageBy{#1}\hspace*{#2}\CcImageNc{#1}\hspace*{#2}\CcImageSa{#1}%
+}
+\newcommand{\CcGroupByNd}[2]{% zoom, gap
+	\CcImageBy{#1}\hspace*{#2}\CcImageNd{#1}%
+}
+\newcommand{\CcGroupBySa}[2]{% zoom, gap
+	\CcImageBy{#1}\hspace*{#2}\CcImageSa{#1}%
+}
+\newcommand{\CcGroupDevNations}[1]{% zoom
+	\CcImageDevNations{#1}%
+}
+\newcommand{\CcGroupNcSampling}[2]{% zoom, gap
+	\CcImageNc{#1}\hspace*{#2}\CcImageSampling{#1}%
+}
+\newcommand{\CcGroupPd}[1]{% zoom
+	\CcImagePd{#1}%
+}
+\newcommand{\CcGroupSampling}[1]{% zoom
+	\CcImageSampling{#1}%
+}
+\newcommand{\CcGroupSamplingPlus}[1]{% zoom
+	\CcImageSamplingPlus{#1}%
+}
+
+
+%% Text
+\newcommand{\CcLongnameBy}{Attribution}
+\newcommand{\CcLongnameByNc}{Attribution--NonCommercial}
+\newcommand{\CcLongnameByNcNd}{Attribution--NoDerivs}
+\newcommand{\CcLongnameByNcSa}{Attribution--NonCommercial--ShareAlike}
+\newcommand{\CcLongnameByNd}{Attribution--NoDerivs}
+\newcommand{\CcLongnameBySa}{Attribution--ShareAlike}
+
+\newcommand{\CcNote}[1]{% longname
+	This work is licensed under the \textit{Creative Commons #1 3.0 License}.%
+}

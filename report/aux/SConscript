@@ -1,0 +1,12 @@
+"""
+This SConscript contains some project specifics.
+"""
+
+# Get the passed in environment.
+Import('env')
+
+# Configure the builders. This is all we're doing here for this case.
+env = SConscript('builders.SConscript', 'env')
+
+# Pass back the modified environment.
+Return('env')

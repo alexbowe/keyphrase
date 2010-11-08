@@ -1,0 +1,58 @@
+\documentclass{CRPITStyle} 
+
+%%%%%%%% PACKAGES %%%%%%%%
+\usepackage{graphicx}
+\usepackage{url}
+\usepackage[numbers,sort]{natbib}
+%\usepackage{showkeys} % Shows citation and reference keys on your pdf
+
+% Algorithms
+\usepackage{algorithmic}
+% This gives floating, captioned algorithms
+\usepackage{algorithm}
+
+% Tables
+\usepackage{booktabs}
+\usepackage{multirow}
+
+% Equals-aligned equations
+\usepackage{amsmath}
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%% MACROS %%%%%%%%%
+% This LaTeX file contains some macros for the CC license page.
+\input{aux/creativecommons}
+
+% My self defined commands
+\input{aux/commands}
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%% SETTINGS %%%%%%%%
+% The paths to the graphics files:
+\graphicspath{{images/}{generated/}}
+
+% Section counting
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\title{Automatic Keyphrase Extraction with NLTK and Dumbo}
+\author{Alex Bowe}
+\affiliation{School of Computer Science, \\
+Royal Melbourne Institute of Technology \\
+Email:~{\tt bowe.alexander@gmail.com}}
+
+\date{November 2010}
+
+\maketitle
+
+\begin{abstract}
+\input{chapters/abstract} \\ \\
+\end{abstract}
+
+\bibliographystyle{abbrv}
+%\bibliography{bibliography}
+
+\end{document}

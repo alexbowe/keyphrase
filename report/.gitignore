@@ -1,0 +1,10 @@
+*.pyc
+
+*.aux
+*.bbl
+*.blg
+*.pdf
+*.log
+*.fls
+
+generated/

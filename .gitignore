@@ -5,5 +5,11 @@
 *.pyc
 
 ## output
-*.out
+*.out*
 diagnostics
+
+.sconsign.dblite
+*.zip
+emr/
+
+keyphrase-talk
